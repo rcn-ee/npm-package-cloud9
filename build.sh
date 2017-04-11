@@ -32,7 +32,7 @@ npm_git_install () {
 		package_version=$(cat package.json | grep version | awk -F '"' '{print $4}' || true)
 		git_version=$(git rev-parse --short HEAD)
 
-		TERM=dumb ${node_bin} ${npm_bin} install -g ${npm_options}
+		TERM=dumb ${node_bin} ${npm_bin} install ${npm_options}
 		cd -
 		rm -rf /tmp/${git_project}/
 	fi
@@ -56,7 +56,7 @@ npm_pkg_install () {
 		rm -rf ${prefix}/${npm_project}/ || true
 	fi
 
-	TERM=dumb ${node_bin} ${npm_bin} install -g ${npm_options} ${npm_project}@${package_version}
+	TERM=dumb ${node_bin} ${npm_bin} install ${npm_options} ${npm_project}@${package_version}
 
 	wfile="${npm_project}-${package_version}-${node_version}"
 	cd ${prefix}/
