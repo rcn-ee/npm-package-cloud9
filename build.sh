@@ -23,11 +23,13 @@ npm_git_install () {
 	fi
 
 	if [ -d /tmp/${git_project}/ ] ; then
+		echo "Resetting: /tmp/${git_project}/"
 		rm -rf /tmp/${git_project}/ || true
 	fi
 
 	git clone -b ${git_branch} ${git_user}/${git_project} /tmp/${git_project}
 	if [ -d /tmp/${git_project}/ ] ; then
+		echo "Cloning: ${git_user}/${git_project}"
 		cd /tmp/${git_project}/
 		package_version=$(cat package.json | grep version | awk -F '"' '{print $4}' || true)
 		git_version=$(git rev-parse --short HEAD)
@@ -42,12 +44,16 @@ npm_git_install () {
 	if [ -f ${wfile}.tar.xz ] ; then
 		rm -rf ${wfile}.tar.xz || true
 	fi
-	tar -cJf ${wfile}.tar.xz ${npm_project}/
+	tar -hcJf ${wfile}.tar.xz ${npm_project}/
 	cd -
 
 	if [ ! -f ./deploy/${distro}/${wfile}.tar.xz ] ; then
 		cp -v ${prefix}/${wfile}.tar.xz ./deploy/${distro}/
 		echo "New Build: ${wfile}.tar.xz"
+	fi
+
+	if [ -d /tmp/${git_project}/ ] ; then
+		rm -rf /tmp/${git_project}/
 	fi
 }
 
@@ -56,7 +62,14 @@ npm_pkg_install () {
 		rm -rf ${prefix}/${npm_project}/ || true
 	fi
 
-	TERM=dumb ${node_bin} ${npm_bin} install ${npm_options} ${npm_project}@${package_version}
+	cd /tmp/
+	echo "TERM=dumb ${node_bin} ${npm_bin} pack ${npm_project}@${package_version}"
+	tmp_package=$(TERM=dumb ${node_bin} ${npm_bin} pack ${npm_project}@${package_version} | tail -1)
+
+	echo "TERM=dumb ${node_bin} ${npm_bin} install -g ${tmp_package} ${npm_options}"
+	TERM=dumb ${node_bin} ${npm_bin} install -g ${tmp_package} ${npm_options}
+
+	cd $DIR/
 
 	wfile="${npm_project}-${package_version}-${node_version}"
 	cd ${prefix}/
@@ -77,7 +90,11 @@ npm_install () {
 	npm_bin="/usr/bin/npm"
 
 	unset node_version
-	node_version=$(/usr/bin/nodejs --version || true)
+	node_version=$(${node_bin} --version || true)
+
+	unset npm_version
+	npm_version=$(${node_bin} ${npm_bin} --version || true)
+
 
 	echo "npm: [`${node_bin} ${npm_bin} --version`]"
 	echo "node: [`${node_bin} --version`]"
